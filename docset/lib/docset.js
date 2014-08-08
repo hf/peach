@@ -5,6 +5,16 @@ var plist = require('plist')
   , q     = require('q')
   , sqlite3 = require('sqlite3');
 
+
+// **docset.constructor()**
+//
+// Docset is used to open and search a Dash docset. You give it a path, example:
+// `new docset('./NodeJS.docset')` and it opens the path. It is an event emitter
+// so you should listen to the events `valid`, `invalid`, `error`, `done` and
+// `search`.
+//
+// All methods return Q promises.
+
 var docset = function docset(path) {
   emitter.call(this);
 
@@ -18,27 +28,12 @@ var docset = function docset(path) {
     }.bind(this));
 };
 
-docset.paths = {};
+// Import docset [paths](docset-paths.html).
+docset.paths = require('./docset-paths');
 
-docset.paths.contents = function(path) {
-  return path + '/Contents';
-};
-
-docset.paths.plist = function(path) {
-  return docset.paths.contents(path) + '/Info.plist';
-};
-
-docset.paths.resources = function(path) {
-  return docset.paths.contents(path) + '/Resources';
-};
-
-docset.paths.index = function(path) {
-  return docset.paths.resources(path) + '/docSet.dsidx';
-};
-
-docset.paths.documents = function(path) {
-  return docset.paths.resources(path) + '/Documents';
-};
+// **docset.exists(path:string): Q.Promise(bool)**
+//
+// Checks whether the path exists on the filesystem.
 
 docset.exists = function(path) {
   var d = q.defer();
@@ -46,7 +41,11 @@ docset.exists = function(path) {
   return d.promise;
 };
 
-docset.validate = function(path, callback) {
+// **docset.validate(path:string): Q.Promise(bool)**
+//
+// Checks whether a path is a valid docset.
+
+docset.validate = function(path) {
   return q.all([
     docset.exists(docset.paths.contents(path)),
     docset.exists(docset.paths.plist(path)),
@@ -64,7 +63,45 @@ docset.validate = function(path, callback) {
   });
 };
 
+
+// Docset is an `EventEmitter`.
+
 docset.prototype = Object.create(emitter.prototype);
+
+// **docset#search(name:string): Q.Promise([results])**
+//
+// Call this to search the docset for the given name. Will return a promise
+// and eventually some results.
+
+docset.prototype.search = function(name) {
+  if (!this.valid) {
+    return q.fcall(function() {
+      throw "Docset is not valid, cannot search.";
+    });
+  }
+
+  var dbp = this._searchIndex();
+
+  return dbp.then(function(db) {
+    var rd = q.defer();
+
+    db.all("SELECT// FROM searchIndex WHERE name LIKE ?", '%' + name + '%', function(error, results) {
+      if (error) {
+        this.emit('error', error);
+        rd.reject(error);
+      } else {
+        rd.resolve(results);
+      }
+    });
+
+    return rd.promise;
+  });
+};
+
+// **docset#_searchIndex(): Q.Promise(sqlite3.Database)**
+//
+// Opens the search index inside the docset. Returns a promise to the sqlite3
+// database.
 
 docset.prototype._searchIndex = function() {
   var db = this._searchIndexDB;
@@ -99,6 +136,11 @@ docset.prototype._searchIndex = function() {
   return this._searchIndex();
 };
 
+
+// *docset#_validate(valid:bool)*
+//
+// Call this upon a validation result.
+
 docset.prototype._validate = function(valid) {
   this.valid = valid;
 
@@ -111,6 +153,10 @@ docset.prototype._validate = function(valid) {
   }
 };
 
+// *docset#_open()*
+//
+// Call this after a valid docset path.
+
 docset.prototype._open = function() {
   return q.nfcall(fs.readFile, docset.paths.plist(this.path), 'UTF-8')
     .then(function(data) { return plist.parse(data); }, function(error) {
@@ -119,6 +165,10 @@ docset.prototype._open = function() {
     })
     .then(this._understandPlist.bind(this));
 };
+
+// *docset#_understandPlist(plist:plist)*
+//
+// Call this to understand the contents of the `Info.plist` file.
 
 docset.prototype._understandPlist = function(plist) {
   this.bundleIdentifier = plist['CFBundleIdentifier'];
@@ -129,23 +179,6 @@ docset.prototype._understandPlist = function(plist) {
   this.isJavaScriptEnabled = plist['isJavaScriptEnabled'];
 };
 
-docset.prototype.search = function(name) {
-  var dbp = this._searchIndex();
-
-  return dbp.then(function(db) {
-    var rd = q.defer();
-
-    db.all("SELECT * FROM searchIndex WHERE name LIKE ?", '%' + name + '%', function(error, results) {
-      if (error) {
-        this.emit('error', error);
-        rd.reject(error);
-      } else {
-        rd.resolve(results);
-      }
-    });
-
-    return rd.promise;
-  });
-};
+// Exports.
 
 module.exports = docset;

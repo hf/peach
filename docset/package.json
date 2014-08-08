@@ -6,5 +6,15 @@
     "q": "~ 1.0.1",
     "plist": "~ 1.0.1",
     "sqlite3": "~ 2.2.7"
+  },
+  "devDependencies": {
+    "mocha": "~ 1.21.4",
+    "chai":  "~ 1.9.1",
+    "fs-extra": "~ 0.10.0",
+    "docco": "*"
+  },
+  "scripts": {
+    "test": "mocha test",
+    "docs": "`npm bin`/docco lib/*"
   }
 }
