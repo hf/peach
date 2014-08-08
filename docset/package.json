@@ -1,0 +1,10 @@
+{
+  "name": "docset",
+  "version": "0.1.0",
+  "main": "lib/docset.js",
+  "dependencies": {
+    "q": "~ 1.0.1",
+    "plist": "~ 1.0.1",
+    "sqlite3": "~ 2.2.7"
+  }
+}
