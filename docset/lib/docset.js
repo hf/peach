@@ -24,6 +24,16 @@ docset.paths = require('./docset-paths');
 // Import docset [utils](docset-utils.html).
 docset.utils = require('./docset-utils');
 
+// Import docset [symbols](docset-symbols.html).
+docset.symbols = require('./docset-symbols');
+
+
+// **open(path:string): q(docset)**
+//
+// Tries to open a docset at `path`.
+//
+// Promise will be fulfilled if the docset can be opened.
+
 docset.open = function(path) {
   return docset.utils.validate(path)
     .then(function(valid) {
