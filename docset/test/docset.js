@@ -28,4 +28,10 @@ describe('docset', function() {
       expect(docset.prototype.search).to.throw;
     });
   });
+
+  describe('#symbols()', function() {
+    it('should throw an exception', function() {
+      expect(docset.prototype.symbols).to.throw;
+    });
+  });
 });

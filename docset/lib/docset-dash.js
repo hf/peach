@@ -53,22 +53,32 @@ dash.prototype.search = function(name, options) {
   this.emit('search', { name: name, options: options });
 
   return this.searchIndex().then(function(db) {
-    var d = q.defer();
-
-    db.all('SELECT * FROM searchIndex WHERE name LIKE ? LIMIT ? OFFSET ?', '%' + name + '%', options.results, options.offset, function(error, result) {
-      if (error) {
+    return q.ninvoke(db, 'all', 'SELECT * FROM searchIndex WHERE name LIKE ? LIMIT ? OFFSET ?', '%' + name + '%', options.results, options.offset)
+    .then(function(result) {
+      this.emit('search:result', { name: name, options: options, result: result });
+      return { name: name, options: options, result: result };
+    }.bind(this), function(error) {
         this.emit('error', error);
         this.emit('search:error', error, { name: name, options: options });
-
-        d.reject(error);
-      } else {
-        this.emit('search:result', { name: name, options: options, result: result });
-
-        d.resolve(result);
-      }
     }.bind(this));
+  }.bind(this));
+};
 
-    return d.promise;
+
+// **#symbols(): q([object])**
+//
+// Returns a summary of all symbols in this docset.
+
+dash.prototype.symbols = function() {
+  return this.searchIndex().then(function(db) {
+    return q.ninvoke(db, 'all', 'SELECT type AS type, COUNT(*) AS entries FROM searchIndex GROUP BY type')
+    .then(function(result) {
+      this.emit('symbols', result);
+      return result;
+    }.bind(this), function(error) {
+      this.emit('error', error);
+      this.emit('symbols:error', error);
+    }.bind(this));
   }.bind(this));
 };
 

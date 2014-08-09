@@ -74,6 +74,18 @@ docset.prototype.search = function(name, options) {
 };
 
 
+// **#symbols(): q([object])**
+//
+// *Implementations must override this method.*
+//
+// Returns a listing of all symbols in this docset combined with stats about
+// them.
+
+docset.prototype.symbols = function() {
+  throw new Error("docset#symbols() is not implemented!");
+};
+
+
 // Exports.
 
 module.exports = docset;

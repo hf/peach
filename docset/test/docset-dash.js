@@ -7,6 +7,13 @@ var mocha = require('mocha')
   , docset = require('../lib/docset')
   , sqlite3 = require('sqlite3').verbose();
 
+var SQL  = [ "CREATE TABLE searchIndex(id INTEGER PRIMARY KEY, name TEXT, type TEXT, path TEXT); " ]
+  , DATA = [ { name: 'fs', type: 'Module', path: 'fs.html' } ];
+
+DATA.forEach(function(data) {
+  SQL.push("INSERT INTO searchIndex(name, type, path) VALUES ('" + data.name + "', '" + data.type + "', '" + data.path + "'); ");
+});
+
 docset.dash  = require('../lib/docset-dash');
 
 describe('docset.dash', function() {
@@ -21,8 +28,9 @@ describe('docset.dash', function() {
   var d = null;
 
   beforeEach(function(done) {
-    utils.create.valid.dashDocset('.Test.docset', true).then(function() {
+    utils.create.valid.dashDocset('.Test.docset', true).then(function(db) {
       d = new docset.dash('.Test.docset', docset.utils.understandPlist(plist.parse(utils.data.dashDocset.Info.plist)));
+
       done();
     });
   });
@@ -38,12 +46,20 @@ describe('docset.dash', function() {
     });
   });
 
+  describe('#symbols()', function() {
+    it('should override docset#symbols()', function() {
+      expect(d.symbols).to.be.a('function');
+      expect(d.symbols).to.not.eq(docset.prototype.symbols);
+    });
+  });
+
   describe('#openSearchIndex()', function() {
-    it('should open the index database', function(done) {
+    it('should open the index database', function() {
       var idx = d.openSearchIndex();
+
       expect(d.idx).to.be.an.instanceof(sqlite3.Database);
 
-      idx.then(function() { done(); }, done);
+      return idx;
     });
   });
 
@@ -69,9 +85,5 @@ describe('docset.dash', function() {
     });
 
     it('should not open a new error database (appears untestable)');
-  });
-
-  describe('#search()', function() {
-
   });
 });

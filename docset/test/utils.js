@@ -7,7 +7,7 @@ var fs = require('fs')
 
 //
 utils.create = { valid: {} };
-utils.create.valid.dashDocset = function(path, realDB) {
+utils.create.valid.dashDocset = function(path, realDB, sql) {
   utils.remove(path);
 
   [ path,
@@ -29,9 +29,17 @@ utils.create.valid.dashDocset = function(path, realDB) {
     });
 
     return d.promise.then(function(db) {
-      db.close();
+      if (sql) {
+        return q.ninvoke(db, 'run', sql[0]).then(function() {
+          var all = sql.slice(1).map(function(cmd) {
+            return q.ninvoke(db, 'run', cmd);
+          });
 
-      return db;
+          return q.all(all).then(function() { db.close(); });
+        });
+      } else {
+        db.close();
+      }
     });
   } else {
     fs.writeFileSync(docset.paths.index(path), '');
