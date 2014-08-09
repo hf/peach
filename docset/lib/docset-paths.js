@@ -1,3 +1,5 @@
+// **docset.paths**
+//
 // Contains functions to obtain proper path names within a docset.
 
 var docset = {
@@ -13,7 +15,8 @@ docset.paths.contents = function(path) {
 
 // `*.docset/Contents/Info.plist` path.
 
-docset.paths.plist = function(path) {
+docset.paths.Info = {};
+docset.paths.Info.plist = function(path) {
   return docset.paths.contents(path) + '/Info.plist';
 };
 

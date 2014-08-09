@@ -1,33 +1,35 @@
 var mocha = require('mocha')
   , expect = require('chai').expect
   , q = require('q')
-  , docset = require('../lib/docset');
+  , docset = {
+    utils: require('../lib/docset-utils')
+  };
 
-describe('docset', function() {
+describe('docset.utils', function() {
 
-  describe('docset.exists', function() {
+  describe(':exists', function() {
     it('should return a promise', function() {
-      expect(docset.exists('/home')).to.be.a('object');
+      expect(docset.utils.exists('/home')).to.be.a('object');
     });
 
     it('should check for file existence', function(done) {
       var fs = require('fs');
 
       fs.exists('/home', function(exists) {
-        docset.exists('/home').then(function(promiseExists) {
+        docset.utils.exists('/home').then(function(promiseExists) {
           expect(exists).to.eq(promiseExists);
         }).then(done, done);
       });
     });
   });
 
-  describe('docset.validate', function() {
+  describe(':validate', function() {
     it('should return a promise', function() {
-      expect(docset.validate('/home')).to.be.a('object');
+      expect(docset.utils.validate('/home')).to.be.a('object');
     });
 
     it('should not validate invalid path as docset', function(done) {
-      docset.validate('/home').then(function(valid) {
+      docset.utils.validate('/home').then(function(valid) {
         expect(valid).to.be.false;
       }).then(done, done);
     });
@@ -49,7 +51,7 @@ describe('docset', function() {
       fs.writeFileSync('.tmp/Test.docset/Contents/Info.plist');
       fs.writeFileSync('.tmp/Test.docset/Contents/Resources/docSet.dsidx');
 
-      docset.validate('.tmp/Test.docset').then(function(valid) {
+      docset.utils.validate('.tmp/Test.docset').then(function(valid) {
         expect(valid).to.be.true;
       }).then(done, done);
 
