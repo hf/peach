@@ -8,7 +8,10 @@ var mocha = require('mocha')
   , sqlite3 = require('sqlite3').verbose();
 
 var SQL  = [ "CREATE TABLE searchIndex(id INTEGER PRIMARY KEY, name TEXT, type TEXT, path TEXT); " ]
-  , DATA = [ { name: 'fs', type: 'Module', path: 'fs.html' } ];
+  , DATA = [
+    { name: 'fs', type: 'Module', path: 'fs.html' },
+    { name: 'os', type: 'xxxxxxx', path: 'os.html' }
+  ];
 
 DATA.forEach(function(data) {
   SQL.push("INSERT INTO searchIndex(name, type, path) VALUES ('" + data.name + "', '" + data.type + "', '" + data.path + "'); ");
@@ -43,7 +46,7 @@ describe('docset.dash [database]', function() {
         expect(search.options.results).to.eq(docset.dash.DEFAULT_OPTIONS.results);
 
         expect(search.result).to.be.ok;
-        expect(search.result.length).to.eq(DATA.length);
+        expect(search.result.length).to.eq(1);
 
         expect(search.result[0].id).to.be.ok;
         expect(search.result[0].name).to.be.ok;
@@ -57,9 +60,12 @@ describe('docset.dash [database]', function() {
     it('should return data', function() {
       return d.symbols().then(function(symbols) {
         expect(symbols).to.be.ok;
-        expect(symbols.length).to.eq(1);
-        expect(symbols[0].type).to.eq('Module');
-        expect(symbols[0].entries).to.eq(1);
+        expect(Object.keys(symbols).length).to.eq(2);
+
+        for (var sym in symbols) {
+          expect(symbols[sym]).to.not.eq(0);
+          expect(docset.types[sym]).to.be.ok;
+        }
       });
     });
   });

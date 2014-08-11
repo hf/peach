@@ -65,16 +65,33 @@ dash.prototype.search = function(name, options) {
 };
 
 
-// **#symbols(): q([object])**
+// **#symbols(): q(object)**
 //
-// Returns a summary of all symbols in this docset.
+// Returns a summary of all [symbols](docset-types.html) in this docset.
 
 dash.prototype.symbols = function() {
   return this.searchIndex().then(function(db) {
     return q.ninvoke(db, 'all', 'SELECT type AS type, COUNT(*) AS entries FROM searchIndex GROUP BY type')
     .then(function(result) {
-      this.emit('symbols', result);
-      return result;
+      var typed = {};
+
+      result.forEach(function(row) {
+        var inverseType = docset.inverseTypes[row.type];
+
+        if (typeof inverseType === 'undefined') {
+          inverseType = docset.inverseTypes[docset.types.UNKNOWN];
+        }
+
+        if (typeof typed[inverseType] === 'undefined') {
+          typed[inverseType] = 0;
+        }
+
+        typed[inverseType] += row.entries;
+      });
+
+      this.emit('symbols', typed);
+
+      return typed;
     }.bind(this), function(error) {
       this.emit('error', error);
       this.emit('symbols:error', error);

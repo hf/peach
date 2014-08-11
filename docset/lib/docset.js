@@ -24,8 +24,11 @@ docset.paths = require('./docset-paths');
 // Import docset [utils](docset-utils.html).
 docset.utils = require('./docset-utils');
 
-// Import docset [symbols](docset-symbols.html).
-docset.symbols = require('./docset-symbols');
+// Import docset [types](docset-types.html).
+docset.types = require('./docset-types');
+
+// Import docset [inverse types](docset-inverse-types.html).
+docset.inverseTypes = require('./docset-inverse-types');
 
 
 // **open(path:string): q(docset)**
@@ -74,12 +77,12 @@ docset.prototype.search = function(name, options) {
 };
 
 
-// **#symbols(): q([object])**
+// **#symbols(): q(object)**
 //
 // *Implementations must override this method.*
 //
-// Returns a listing of all symbols in this docset combined with stats about
-// them.
+// Returns a listing of all [symbols](docset-types.html) in this docset combined
+// with stats about them.
 
 docset.prototype.symbols = function() {
   throw new Error("docset#symbols() is not implemented!");
