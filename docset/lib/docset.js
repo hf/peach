@@ -89,6 +89,17 @@ docset.prototype.symbols = function() {
 };
 
 
+// **#list(symbol:string, [options:object]): q([object])**
+//
+// *Implementations must override this method.*
+//
+// Returns a listing of all entries with [symbol](docset-types.html) in this
+// docset.
+
+docset.prototype.list = function(symbol, options) {
+  throw new Error("docset#list() is not implemented!");
+};
+
 // Exports.
 
 module.exports = docset;

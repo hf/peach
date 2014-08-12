@@ -9,7 +9,8 @@ var mocha = require('mocha')
 
 var SQL  = [ "CREATE TABLE searchIndex(id INTEGER PRIMARY KEY, name TEXT, type TEXT, path TEXT); " ]
   , DATA = [
-    { name: 'fs', type: 'Module', path: 'fs.html' },
+    { name: 'fs', type: docset.types.MODULE, path: 'fs.html' },
+    { name: 'util.inherit', type: docset.types.FUNCTION[parseInt(Math.random() * 100) % docset.types.FUNCTION.length], path: 'util.html#inherit' },
     { name: 'os', type: 'xxxxxxx', path: 'os.html' }
   ];
 
@@ -60,12 +61,37 @@ describe('docset.dash [database]', function() {
     it('should return data', function() {
       return d.symbols().then(function(symbols) {
         expect(symbols).to.be.ok;
-        expect(Object.keys(symbols).length).to.eq(2);
+        expect(Object.keys(symbols).length).to.eq(3);
 
         for (var sym in symbols) {
           expect(symbols[sym]).to.not.eq(0);
           expect(docset.types[sym]).to.be.ok;
         }
+      });
+    });
+  });
+
+  describe('#list()', function() {
+    it('should return data in strict mode', function() {
+      return d.list('FUNCTION').then(function(results) {
+        expect(results).to.be.ok;
+
+        expect(results[0]).to.be.ok;
+        expect(results[0].name).to.be.a('string');
+        expect(docset.inverseTypes[results[0].type]).to.eq('FUNCTION');
+        expect(results[0].path).to.be.a('string');
+      });
+    });
+
+    it('should return data in lenient mode', function() {
+      return d.list('mod', { lenient: true }).then(function(results) {
+        expect(results).to.be.ok;
+
+        expect(results.length).to.eq(1);
+        expect(results[0]).to.be.ok;
+        expect(results[0].name).to.eq('fs');
+        expect(docset.inverseTypes[results[0].type]).to.eq('MODULE');
+        expect(results[0].path).to.be.a('string');
       });
     });
   });

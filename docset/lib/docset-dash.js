@@ -8,7 +8,7 @@
 
 var docset = require('./docset')
   , q = require('q')
-  , sqlite3 = require('sqlite3');
+  , sqlite3 = require('sqlite3').verbose();
 
 
 // **constructor(path:string, info:object)**
@@ -23,13 +23,19 @@ var dash = function(path, info) {
 
 // **DEFAULT_OPTIONS**
 //
-// Default search options. Contains `offset` which offsets the search results
-// returned by `docset.dash#search()`, and `results` which limits the amount of
-// results to be returned.
+// Default search options.
+//
+// + `offset` <br/>
+//   how many entries to skip
+// + `results` <br/>
+//   how many entries to return
+// + `lenient` <br/>
+//   whether this query should be run in strict mode (inverse)
 
 dash.DEFAULT_OPTIONS = {
   offset: 0,
-  results: 300
+  results: 300,
+  lenient: false
 };
 
 
@@ -95,6 +101,70 @@ dash.prototype.symbols = function() {
     }.bind(this), function(error) {
       this.emit('error', error);
       this.emit('symbols:error', error);
+    }.bind(this));
+  }.bind(this));
+};
+
+
+// **#list(symbol:string, [options:object]): q([result])**
+//
+// Queries the docset index by symbol type.
+// There are two modes available: strict and lenient.
+//
+// Strict mode is on by default and it only searches for the strict type
+// symbols defined in [docset-types](docset-types.html).
+//
+// Lenient mode searches for a substring in the type.
+//
+// Options as defined in `DEFAULT_OPTIONS` can also be used to limit the number
+// of results.
+
+dash.prototype.list = function(symbol, options) {
+  var sql = 'SELECT * FROM searchIndex WHERE '
+    , bind = null;
+
+  options = options || {};
+  options.offset = options.offset || dash.DEFAULT_OPTIONS.offset;
+  options.results = options.results || dash.DEFAULT_OPTIONS.results;
+  options.lenient = options.lenient || dash.DEFAULT_OPTIONS.lenient;
+
+  if (!options.lenient) {
+    if (!docset.types[symbol]) {
+      return q.fcall(function() {
+        var error = new Error("Symbol " + symbol + " not in the docset spec. (Happened in strict mode.)");
+        this.emit('error', error);
+        this.emit('list:error', error);
+
+        throw error;
+      }.bind(this));
+    }
+
+    sql += 'type IN ( ? ';
+
+    if (docset.types[symbol] instanceof Array) {
+      for (var i = 0; i < docset.types[symbol].length - 1; i++) {
+        sql += ', ?';
+      }
+    }
+
+    sql += ') ';
+
+    bind = [].concat(docset.types[symbol]);
+  } else {
+    sql += 'type LIKE ? ';
+    bind = [ "%" + symbol + "%" ];
+  }
+
+  sql += 'LIMIT ? OFFSET ?;';
+
+  var args = [ sql ].concat(bind).concat(options.results, options.offset);
+
+  return this.searchIndex().then(function(db) {
+    return q.npost(db, 'all', args).then(function(result) {
+      return result;
+    }.bind(this), function(error) {
+      this.emit('error', error);
+      this.emit('list:error', { symbol: symbol, options: options, error: error });
     }.bind(this));
   }.bind(this));
 };
